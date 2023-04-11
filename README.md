@@ -7,6 +7,6 @@ This script provides a convenient way to delete mesh components in "Edit Mode" b
 - Download "mesh_qucik_delete.py"
 - Open Blender's Add-ons Preferences by going to "Edit" > "Preferences" > "Add-ons"
 - Click on "Install"
-- Selected the downloaded "mesh_qucik_delete.py"
+- Select the downloaded "mesh_qucik_delete.py"
 - Enable the "Quick Mesh Delete" checkmark
 - Save preferences
