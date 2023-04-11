@@ -18,12 +18,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 # ***** END GPL LICENSE BLOCK *****
 """
 
+import bpy
+import os
+
 from bpy.types import (
+    AddonPreferences,
     Operator,
 )
 
+from bpy.props import (
+    StringProperty,
+    BoolProperty,
+    IntProperty,
+    EnumProperty,
+)
 
-import bpy
+
 bl_info = {
     "name": "Quick Mesh Delete",
     "author": "Gixo <notgixo@proton.me>",
@@ -49,34 +59,40 @@ def _quick_delete():
         bpy.ops.mesh.delete(type=del_type)
 
 
-def _assign_shortcuts():
+def _assign_shortcuts(shift):
     wm = bpy.context.window_manager
-    items = wm.keyconfigs.user.keymaps["Mesh"].keymap_items
+    mesh_keymaps = wm.keyconfigs.user.keymaps["Mesh"].keymap_items
     # Changes Blender's default shortcuts
-    for item in items:
-        if item.name == "Delete":
-            item.shift = 1
+    for keymap in mesh_keymaps:
+        if keymap.name == "Delete" and not shift:
+            keymap.shift = 1
+
+        else:
+            keymap.shift = 0
 
     # Replace Blender's default delete with quick delete
-    mesh_keymaps = wm.keyconfigs.user.keymaps["Mesh"].keymap_items
-    mesh_keymaps.new("qmd.quick_delete", type="X", value="PRESS")
-    mesh_keymaps.new("qmd.quick_delete", type="DEL", value="PRESS")
+    mesh_keymaps.new("qmd.quick_delete", type="X", value="PRESS", shift=shift)
+    mesh_keymaps.new("qmd.quick_delete", type="DEL", value="PRESS", shift=shift)
 
 
 def _revert_shortcuts():
     wm = bpy.context.window_manager
-    items = wm.keyconfigs.user.keymaps["Mesh"].keymap_items
-    # Changes Blender's delete shortcut to its default state
-    for item in items:
-        if item.name == "Delete":
-            item.shift = 0
-
-    # Deletes created shortcut for quick delete
     mesh_keymaps = wm.keyconfigs.user.keymaps["Mesh"].keymap_items
-
+    # Deletes created shortcut for quick delete
     for keymap in mesh_keymaps:
         if keymap.idname == "qmd.quick_delete":
             mesh_keymaps.remove(keymap)
+
+    # Changes Blender's delete shortcut to its default state
+    for keymap in mesh_keymaps:
+        if keymap.name == "Delete":
+            keymap.shift = 0
+
+
+def _shortcut_update(self, context):
+    pref = bpy.context.preferences.addons["mesh_quick_delete"].preferences
+    shift = pref.shift_shortcut
+    _assign_shortcuts(shift)
 
 
 class QMD_OT_quick_delete(Operator):
@@ -92,21 +108,45 @@ class QMD_OT_quick_delete(Operator):
         return {"FINISHED"}
 
 
+class QMDPreferences(AddonPreferences):
+    """Add-on's preferences"""
+    bl_idname = "mesh_quick_delete"
+
+    shift_shortcut: BoolProperty(
+        name='Use "Shift" + "X" for Quick Delete',
+        default=False,
+        update=_shortcut_update
+    )
+
+    def draw(self, context):
+        layout = self.layout
+
+        # ----------------------------------
+        box = layout.box()
+        col = box.column()
+        col.label(text="Shortcuts:")
+        col.prop(self, "shift_shortcut")
+        # ----------------------------------
+
+
 # -----------------------------------------------------
 # Registration
 # ------------------------------------------------------
 classes = (
+    QMDPreferences,
     QMD_OT_quick_delete,
 )
 
 
 def register():
+    from bpy.utils import register_class
     for cls in classes:
-        bpy.utils.register_class(cls)
-    _assign_shortcuts()
+        register_class(cls)
+    _assign_shortcuts(False)
 
 
 def unregister():
-    for cls in classes:
-        bpy.utils.unregister_class(cls)
+    from bpy.utils import unregister_class
+    for cls in reversed(classes):
+        unregister_class(cls)
     _revert_shortcuts()
