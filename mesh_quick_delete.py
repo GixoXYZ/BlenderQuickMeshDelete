@@ -40,6 +40,7 @@ bl_info = {
 def _quick_delete():
     mode = bpy.context.mode
     if mode == "EDIT_MESH":
+        # Delete selected component based on mesh select mode
         select_mode = bpy.context.tool_settings.mesh_select_mode[:]
         del_types = ["VERT", "EDGE", "FACE"]
         active_select_mode = select_mode.index(True)
@@ -58,7 +59,8 @@ def _assign_shortcuts():
 
     # Replace Blender's default delete with quick delete
     mesh_keymaps = wm.keyconfigs.user.keymaps["Mesh"].keymap_items
-    mesh_keymaps.new("qmd.quick_delete", type='X', value='PRESS')
+    mesh_keymaps.new("qmd.quick_delete", type="X", value="PRESS")
+    mesh_keymaps.new("qmd.quick_delete", type="DEL", value="PRESS")
 
 
 def _revert_shortcuts():
@@ -71,8 +73,10 @@ def _revert_shortcuts():
 
     # Deletes created shortcut for quick delete
     mesh_keymaps = wm.keyconfigs.user.keymaps["Mesh"].keymap_items
-    qmd_keymap = wm.keyconfigs.user.keymaps["Mesh"].keymap_items["qmd.quick_delete"]
-    mesh_keymaps.remove(qmd_keymap)
+
+    for keymap in mesh_keymaps:
+        if keymap.idname == "qmd.quick_delete":
+            mesh_keymaps.remove(keymap)
 
 
 class QMD_OT_quick_delete(Operator):
