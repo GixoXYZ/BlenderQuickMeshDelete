@@ -19,7 +19,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 import bpy
-import os
 
 from bpy.types import (
     AddonPreferences,
@@ -27,10 +26,7 @@ from bpy.types import (
 )
 
 from bpy.props import (
-    StringProperty,
     BoolProperty,
-    IntProperty,
-    EnumProperty,
 )
 
 
@@ -47,11 +43,11 @@ bl_info = {
 }
 
 
-def _quick_delete():
-    mode = bpy.context.mode
+def _quick_delete(context):
+    mode = context.mode
     if mode == "EDIT_MESH":
         # Delete selected component based on mesh select mode
-        select_mode = bpy.context.tool_settings.mesh_select_mode[:]
+        select_mode = context.tool_settings.mesh_select_mode[:]
         del_types = ["VERT", "EDGE", "FACE"]
         active_select_mode = select_mode.index(True)
         del_type = del_types[active_select_mode]
@@ -67,12 +63,22 @@ def _assign_shortcuts(shift):
         if keymap.name == "Delete" and not shift:
             keymap.shift = 1
 
-        else:
+        elif keymap.name == "Delete" and shift:
             keymap.shift = 0
 
     # Replace Blender's default delete with quick delete
-    mesh_keymaps.new("qmd.quick_delete", type="X", value="PRESS", shift=shift)
-    mesh_keymaps.new("qmd.quick_delete", type="DEL", value="PRESS", shift=shift)
+    mesh_keymaps.new(
+        "qmd.quick_delete",
+        type="X",
+        value="PRESS",
+        shift=shift
+    )
+    mesh_keymaps.new(
+        "qmd.quick_delete",
+        type="DEL",
+        value="PRESS",
+        shift=shift
+    )
 
 
 def _revert_shortcuts():
@@ -102,8 +108,7 @@ class QMD_OT_quick_delete(Operator):
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
-
-        _quick_delete()
+        _quick_delete(context)
 
         return {"FINISHED"}
 
@@ -114,13 +119,12 @@ class QMDPreferences(AddonPreferences):
 
     shift_shortcut: BoolProperty(
         name='Use "Shift" + "X" for Quick Delete',
-        default=False,
-        update=_shortcut_update
+        default=True,
+        update=_shortcut_update,
     )
 
     def draw(self, context):
         layout = self.layout
-
         # ----------------------------------
         box = layout.box()
         col = box.column()
@@ -142,7 +146,7 @@ def register():
     from bpy.utils import register_class
     for cls in classes:
         register_class(cls)
-    _assign_shortcuts(False)
+    _assign_shortcuts(True)
 
 
 def unregister():
