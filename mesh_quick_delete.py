@@ -60,12 +60,8 @@ def _assign_shortcuts(shift):
     mesh_keymaps = wm.keyconfigs.user.keymaps["Mesh"].keymap_items
     # Changes Blender's default shortcuts
     for keymap in mesh_keymaps:
-        if keymap.name == "Delete" and not shift:
-            keymap.shift = 1
-
-        elif keymap.name == "Delete" and shift:
-            keymap.shift = 0
-
+        if keymap.name == "Delete":
+            keymap.shift = 0 if shift else 1
     # Replace Blender's default delete with quick delete
     mesh_keymaps.new(
         "qmd.quick_delete",
